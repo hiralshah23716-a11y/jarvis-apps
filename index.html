@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en" data-accent="cyan">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>JARVIS — Personal Assistant Interface</title>
+  <meta name="description" content="A local-first JARVIS-style assistant dashboard: voice control, timers, tasks, notes and reminders. No accounts, no server." />
+  <meta name="theme-color" content="#04070d" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%2338e8ff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%2338e8ff'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/hud.css" />
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <div class="bg-glow bg-glow--one"></div>
+    <div class="bg-glow bg-glow--two"></div>
+    <div class="bg-grid"></div>
+    <div class="bg-vignette"></div>
+    <div class="bg-scanlines"></div>
+  </div>
+
+  <div class="app">
+    <!-- ── TOP BAR ─────────────────────────────────────────────── -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="34" height="34">
+            <circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".55" />
+            <circle cx="24" cy="24" r="15" fill="none" stroke="currentColor" stroke-width="1" opacity=".35" stroke-dasharray="3 5" />
+            <path d="M24 9.5 36.5 31.5H11.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+            <circle cx="24" cy="25" r="4.6" fill="currentColor" />
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>JARVIS</h1>
+          <p>Just A Rather Very Intelligent System</p>
+        </div>
+      </div>
+
+      <div class="topbar-center">
+        <div class="pill" id="pill-net">
+          <span class="dot"></span><span class="pill-label">LOCAL MODE</span>
+        </div>
+        <div class="clock">
+          <time id="clock-time">--:--:--</time>
+          <span id="clock-date">—</span>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="icon-btn" id="btn-sound" type="button" aria-pressed="true" title="Interface sounds">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" /><path class="slash" d="M16 8.5 21 15.5M21 8.5l-5 7" /></svg>
+          <span class="sr-only">Toggle interface sounds</span>
+        </button>
+        <button class="icon-btn" id="btn-voice" type="button" aria-pressed="true" title="Spoken replies">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2" /></svg>
+          <span class="sr-only">Toggle spoken replies</span>
+        </button>
+        <button class="icon-btn" id="btn-accent" type="button" title="Cycle accent colour">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 4a8 8 0 0 1 0 16z" /></svg>
+          <span class="sr-only">Cycle accent colour</span>
+        </button>
+        <button class="icon-btn" id="btn-help" type="button" title="Command list (press ?)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9.5 9.2a2.6 2.6 0 1 1 3.6 2.4c-.7.3-1.1 1-1.1 1.8v.4" /><circle cx="12" cy="17.2" r=".9" fill="currentColor" stroke="none" /></svg>
+          <span class="sr-only">Command list</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── MAIN GRID ───────────────────────────────────────────── -->
+    <main class="grid">
+      <!-- LEFT: core + telemetry -->
+      <section class="col col--left" aria-label="Core and system telemetry">
+        <div class="panel panel--brackets core-panel">
+          <div class="core" id="core" data-state="standby">
+            <div class="core-ring core-ring--outer"></div>
+            <div class="core-ring core-ring--dash"></div>
+            <div class="core-ring core-ring--inner"></div>
+            <div class="core-sweep"></div>
+            <div class="core-reactor">
+              <div class="core-glow"></div>
+              <div class="core-coil"></div>
+            </div>
+            <div class="core-ticks" aria-hidden="true"></div>
+          </div>
+
+          <div class="core-readout">
+            <div class="core-readout-row">
+              <span class="micro">CORE</span>
+              <span class="core-state" id="core-state">STANDBY</span>
+            </div>
+            <div class="core-meter"><span id="core-meter-fill"></span></div>
+            <div class="core-readout-row micro muted">
+              <span id="core-uptime">UPTIME 00:00:00</span>
+              <span id="core-session">SESSION 001</span>
+            </div>
+          </div>
+
+          <button id="btn-mic" class="mic-btn" type="button" aria-pressed="false">
+            <span class="mic-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6" /></svg>
+            </span>
+            <span class="mic-label" id="mic-label">PRESS TO SPEAK</span>
+            <span class="mic-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+          </button>
+          <p class="mic-hint" id="mic-hint">Voice input needs Chrome, Edge or Safari. Typing always works.</p>
+        </div>
+
+        <div class="panel telemetry">
+          <div class="panel-head">
+            <h2>System Telemetry</h2>
+            <span class="micro muted">LIVE</span>
+          </div>
+          <div class="spark-rows">
+            <div class="spark-row" data-metric="cpu">
+              <span class="spark-label">CPU</span>
+              <canvas class="spark" width="220" height="38" aria-hidden="true"></canvas>
+              <span class="spark-value">0%</span>
+            </div>
+            <div class="spark-row" data-metric="ram">
+              <span class="spark-label">MEM</span>
+              <canvas class="spark" width="220" height="38" aria-hidden="true"></canvas>
+              <span class="spark-value">0%</span>
+            </div>
+            <div class="spark-row" data-metric="net">
+              <span class="spark-label">NET</span>
+              <canvas class="spark" width="220" height="38" aria-hidden="true"></canvas>
+              <span class="spark-value">0%</span>
+            </div>
+          </div>
+          <dl class="specs" id="specs">
+            <div><dt>Device</dt><dd data-spec="platform">—</dd></div>
+            <div><dt>CPU cores</dt><dd data-spec="cores">—</dd></div>
+            <div><dt>Memory</dt><dd data-spec="memory">—</dd></div>
+            <div><dt>Display</dt><dd data-spec="screen">—</dd></div>
+            <div><dt>Battery</dt><dd data-spec="battery">—</dd></div>
+            <div><dt>Storage used</dt><dd data-spec="storage">—</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <!-- CENTER: command console -->
+      <section class="col col--center" aria-label="Command console">
+        <div class="panel console-panel">
+          <div class="panel-head console-head">
+            <div class="console-title">
+              <span class="status-led" id="console-led"></span>
+              <h2>Command Console</h2>
+            </div>
+            <div class="console-tools">
+              <button class="ghost-btn" id="btn-clear" type="button" title="Clear transcript">CLEAR</button>
+              <button class="ghost-btn" id="btn-export" type="button" title="Download a JSON backup">EXPORT</button>
+            </div>
+          </div>
+
+          <div class="log" id="log" role="log" aria-live="polite" aria-label="Conversation transcript"></div>
+
+          <div class="chips" id="chips" aria-label="Suggested commands"></div>
+
+          <form class="composer" id="composer" autocomplete="off">
+            <span class="prompt-glyph" aria-hidden="true">&gt;</span>
+            <input
+              id="command-input"
+              type="text"
+              placeholder="Ask me something… try “set a timer for 5 minutes”"
+              aria-label="Command input"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button class="send-btn" type="submit" title="Send (Enter)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h13M12 6l6 6-6 6" /></svg>
+              <span class="sr-only">Send command</span>
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- RIGHT: timer + modules -->
+      <section class="col col--right" aria-label="Modules">
+        <div class="panel timer-panel">
+          <div class="panel-head">
+            <h2>Chronometer</h2>
+            <span class="micro muted" id="timer-mode">IDLE</span>
+          </div>
+          <div class="timer-body">
+            <div class="timer-dial">
+              <svg viewBox="0 0 128 128" aria-hidden="true">
+                <circle class="dial-track" cx="64" cy="64" r="56" />
+                <circle class="dial-progress" id="dial-progress" cx="64" cy="64" r="56" />
+              </svg>
+              <div class="timer-face">
+                <span class="timer-time" id="timer-time">00:00</span>
+                <span class="timer-label" id="timer-label">NO TIMER SET</span>
+              </div>
+            </div>
+            <div class="timer-controls">
+              <button class="btn btn--primary" id="btn-timer-toggle" type="button">START</button>
+              <button class="btn" id="btn-timer-reset" type="button">RESET</button>
+            </div>
+            <div class="presets" id="presets">
+              <button class="chip-btn" data-seconds="60" type="button">1m</button>
+              <button class="chip-btn" data-seconds="300" type="button">5m</button>
+              <button class="chip-btn" data-seconds="600" type="button">10m</button>
+              <button class="chip-btn" data-seconds="1500" type="button">25m</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel modules-panel">
+          <div class="tabs" role="tablist" aria-label="Modules">
+            <button class="tab is-active" role="tab" aria-selected="true" data-tab="tasks" type="button">Tasks <span class="badge" id="badge-tasks">0</span></button>
+            <button class="tab" role="tab" aria-selected="false" data-tab="notes" type="button">Notes <span class="badge" id="badge-notes">0</span></button>
+            <button class="tab" role="tab" aria-selected="false" data-tab="reminders" type="button">Alerts <span class="badge" id="badge-reminders">0</span></button>
+          </div>
+
+          <div class="tab-pane is-active" data-pane="tasks" role="tabpanel">
+            <form class="inline-form" id="task-form">
+              <input id="task-input" type="text" placeholder="Add a task…" aria-label="New task" spellcheck="false" />
+              <button class="mini-btn" type="submit" aria-label="Add task">+</button>
+            </form>
+            <ul class="list" id="task-list"></ul>
+            <button class="link-btn" id="btn-clear-tasks" type="button">Clear completed</button>
+          </div>
+
+          <div class="tab-pane" data-pane="notes" role="tabpanel">
+            <form class="inline-form" id="note-form">
+              <input id="note-input" type="text" placeholder="Jot a note…" aria-label="New note" spellcheck="false" />
+              <button class="mini-btn" type="submit" aria-label="Add note">+</button>
+            </form>
+            <ul class="list" id="note-list"></ul>
+          </div>
+
+          <div class="tab-pane" data-pane="reminders" role="tabpanel">
+            <form class="inline-form" id="reminder-form">
+              <input id="reminder-input" type="text" placeholder="Remind me to… (in 10 minutes)" aria-label="New reminder" spellcheck="false" />
+              <button class="mini-btn" type="submit" aria-label="Add reminder">+</button>
+            </form>
+            <ul class="list" id="reminder-list"></ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ── STATUS BAR ──────────────────────────────────────────── -->
+    <footer class="statusbar">
+      <span class="micro" id="status-left">DATA STORED ON THIS DEVICE · NO ACCOUNT</span>
+      <span class="micro muted" id="status-mid">FPS —</span>
+      <span class="micro muted">JARVIS UI v1.0</span>
+    </footer>
+  </div>
+
+  <!-- ── HELP MODAL ────────────────────────────────────────────── -->
+  <div class="modal" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
+    <div class="modal-card">
+      <header class="modal-head">
+        <h2 id="help-title">Command Directory</h2>
+        <button class="icon-btn" id="btn-close-help" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </button>
+      </header>
+      <div class="modal-body">
+        <div class="help-grid" id="help-grid"></div>
+        <p class="help-foot">
+          Shortcuts — <kbd>⌘K</kbd>/<kbd>Ctrl K</kbd> focus console · <kbd>Space</kbd> talk · <kbd>↑</kbd><kbd>↓</kbd> history · <kbd>Esc</kbd> close.
+          Everything is stored in this browser only.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TOASTS ────────────────────────────────────────────────── -->
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <!-- ── BOOT OVERLAY ──────────────────────────────────────────── -->
+  <div class="boot" id="boot">
+    <div class="boot-inner">
+      <div class="boot-rings" aria-hidden="true"><span></span><span></span><span></span></div>
+      <h2 class="boot-title">JARVIS</h2>
+      <p class="boot-line" id="boot-line">INITIALISING CORE…</p>
+      <div class="boot-bar"><span></span></div>
+      <button class="boot-skip" id="boot-skip" type="button">SKIP</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
